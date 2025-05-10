@@ -1,4 +1,7 @@
 from fileio import int_to_bytes, bytes_to_int, read_block, write_block, build_header, parse_header
+import os
+import csv
+
 
 class BTreeNode:
     def __init__(self, block_id, parent_id=0, num_keys=0):
@@ -164,3 +167,65 @@ def print_tree(filename):
             in_order(node.children[node.num_keys])
 
         in_order(root_id)
+        
+        
+def load(filename, csv_filename):
+
+    if not os.path.exists(filename):
+        print("Error: Index file '{}' does not exist.".format(filename))
+        return
+
+    if not os.path.exists(csv_filename):
+        print("Error: CSV file '{}' does not exist.".format(csv_filename))
+        return
+
+    with open(csv_filename, 'r') as csvfile:
+        reader = csv.reader(csvfile)
+        line_num = 0
+        for row in reader:
+            line_num += 1
+            if len(row) != 2:
+                print("Warning: Line {} malformed, skipping.".format(line_num))
+                continue
+            try:
+                key = int(row[0].strip())
+                value = int(row[1].strip())
+                insert(filename, key, value)
+            except ValueError:
+                print("Warning: Line {} has invalid integers, skipping.".format(line_num))
+                
+                
+def extract(filename, output_csv):
+    import csv
+
+    if not os.path.exists(filename):
+        print("Error: Index file '{}' does not exist.".format(filename))
+        return
+
+    if os.path.exists(output_csv):
+        print("Error: Output file '{}' already exists.".format(output_csv))
+        return
+
+    with open(filename, 'rb') as f, open(output_csv, 'w', newline='') as out:
+        writer = csv.writer(out)
+        header_data = read_block(f, 0)
+        root_id, _ = parse_header(header_data)
+
+        if root_id == 0:
+            print("Tree is empty. Nothing to extract.")
+            return
+
+        def in_order(node_id):
+            if node_id == 0:
+                return
+
+            data = read_block(f, node_id)
+            node = BTreeNode.from_bytes(data)
+
+            for i in range(node.num_keys):
+                in_order(node.children[i])
+                writer.writerow([node.keys[i], node.values[i]])
+            in_order(node.children[node.num_keys])
+
+        in_order(root_id)
+    print("Extraction complete: all entries written to '{}'.".format(output_csv))

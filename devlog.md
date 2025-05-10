@@ -24,7 +24,7 @@ $ python3 main.py insert tree.idx 20 200
 Everything executed successfully, and I confirmed that once the root reached capacity, it split as expected and created a new root above it. This proves that the splitting and root promotion logic is functional and correctly updates the header and child pointers. With this phase complete, the B-Tree can now dynamically grow beyond a single block. Next, I’ll expand the insert logic to work with internal nodes, setting up for full recursive splits deeper into the tree structure.
 
 #5/10/2025 2:11pm
-Today I implemented the search functionality for the B-Tree index. The goal was to allow users to query a specific key in the tree and either return the associated value or indicate that the key wasn’t found. I added a new function called search() in btree.py, which starts at the root node and follows the correct child pointer based on the value of the key being searched. The traversal logic compares the key with all keys in the current node, and if it finds a match, it prints the associated value. If the key is smaller than a given node key, it follows the corresponding child pointer. If it’s larger than all keys in the node, it follows the rightmost child pointer. If the traversal reaches a leaf node and the key hasn’t been found, the function prints a message saying so.
+I implemented the search functionality for the B-Tree index. The goal was to allow users to query a specific key in the tree and either return the associated value or indicate that the key wasn’t found. I added a new function called search() in btree.py, which starts at the root node and follows the correct child pointer based on the value of the key being searched. The traversal logic compares the key with all keys in the current node, and if it finds a match, it prints the associated value. If the key is smaller than a given node key, it follows the corresponding child pointer. If it’s larger than all keys in the node, it follows the rightmost child pointer. If the traversal reaches a leaf node and the key hasn’t been found, the function prints a message saying so.
 
 One important aspect of this design is that the search only loads one node at a time from disk, so the memory footprint stays small and consistent with the project’s requirement to never load more than a few nodes into memory at once. It also works with any number of tree levels, whether the tree has just a root or has already split and formed a new root and child layers.
 
@@ -44,7 +44,7 @@ Key 99 not found.
 These tests confirmed that the search correctly finds inserted keys even after a root split, and correctly reports when a key isn’t present in the tree. With search working, the B-Tree now supports both reading and writing operations. The next step is to implement the print command to display all key-value pairs in sorted order using an in-order traversal .
 
 #5/10/2025 5:00pm
-Today I implemented the print command for the B-Tree, which performs an in-order traversal to display all key-value pairs stored in the tree in sorted order. This required recursively visiting each node starting from the root, visiting left children, then printing the current key-value, and finally visiting the right child. I added a function called print_tree() in btree.py and used a helper function in_order() inside it to perform the traversal. The function reads each node from disk as needed, which keeps memory usage low and consistent with the requirement of not loading more than a few nodes into memory.
+I implemented the print command for the B-Tree, which performs an in-order traversal to display all key-value pairs stored in the tree in sorted order. This required recursively visiting each node starting from the root, visiting left children, then printing the current key-value, and finally visiting the right child. I added a function called print_tree() in btree.py and used a helper function in_order() inside it to perform the traversal. The function reads each node from disk as needed, which keeps memory usage low and consistent with the requirement of not loading more than a few nodes into memory.
 
 To make this accessible from the command line, I added a new print command in main.py. This allows users to run python main.py print <filename> and see all records printed in increasing key order.
 
@@ -61,4 +61,51 @@ Key: 20, Value: 200
 Key: 30, Value: 300
 Key: 40, Value: 400
 
-This confirmed that the in-order traversal is functioning correctly, even after node splits, and that the B-Tree structure is being maintained on disk as expected. With this phase complete, the B-Tree supports not only insertions and searches, but also full visibility into its current contents in sorted order. Next, I’ll implement the load command to bulk insert from CSV files, and the extract command to export all data into a file.
+his confirmed that the in-order traversal is functioning correctly, even after node splits, and that the B-Tree structure is being maintained on disk as expected. With this phase complete, the B-Tree supports not only insertions and searches, but also full visibility into its current contents in sorted order. Next, I’ll implement the load command to bulk insert from CSV files, and the extract command to export all data into a file.
+
+
+#5/10/2025 8:41pm
+
+I implemented the load feature in the B-Tree index manager, which allows the program to bulk-insert key-value pairs from a CSV file. I wrote a function called load() in btree.py that reads a specified CSV file line by line, parses each key,value pair, and inserts it into the B-Tree using the existing insert() function. It also includes error handling for malformed lines and missing files.
+
+To support this from the command line, I updated main.py by adding a new elif command == "load": block to handle the load <index_file> <csv_file> command. However, I ran into a strange issue where Python kept giving me a syntax error on that line, even though the code looked correct. The error message was:
+File "main.py", line 47
+    elif command == "load":
+                              ^
+			      SyntaxError
+It turned out to be caused by inconsistent indentation — the elif line had 5 spaces instead of 4. Python is sensitive to indentation, so it was treated as a broken block. After retyping the line manually with correct spacing and checking the previous block for proper closure, the error was resolved. I also realized I had forgotten to import the load function at the top of main.py, so I added load to the import list from btree.
+
+Once the bug was fixed, I tested the feature using the following steps:
+
+I created a test CSV file called input.csv with this content:
+10,100
+20,200
+30,300
+Then I ran:
+python3 main.py create tree.idx
+python3 main.py load tree.idx input.csv
+python3 main.py print tree.idx
+The output was:Key: 10, Value: 100
+Key: 20, Value: 200
+Key: 30, Value: 300
+This confirmed that the load feature works correctly and integrates seamlessly with the existing B-Tree logic. With this phase complete, the program now supports automated batch inserts, making it much easier to test large inputs and prepare data quickly.
+
+Next up, I plan to implement the extract command, which will export all key-value pairs in the tree to a CSV file.
+
+
+
+#5/10/2025 10:21pm
+I implemented the extract command, which allows the B-Tree index system to export all stored key-value pairs to a CSV file. This is useful for saving the data in a readable format or transferring it to other programs. I added a new function called extract() in btree.py, which performs an in-order traversal of the tree—just like the print function—but instead of printing to the console, it writes each key-value pair to a .csv file using Pythons csv module.
+
+One important detail was handling file existence properly: if the output CSV file already exists, the program will exit with an error message instead of overwriting the file. This aligns with the project spec that says the output file should remain unmodified unless explicitly created.
+
+In main.py, I added a new command handler for extract, which takes two arguments: the index file and the output CSV filename. I also updated the import statement to include extract() from btree.
+
+After implementing the function, I tested it using the following commands:
+python3 main.py extract tree.idx output.csv
+
+Extraction complete: all entries written to 'output.csv'.
+
+This confirmed that the tree was traversed in sorted order and the output file was written correctly. The function also handled the case when the output file already existed by printing an appropriate error message and exiting cleanly.
+
+With this phase complete, the system now supports both loading data from CSV and exporting it back, making it much more usable and easier to verify correctness. The core features of the project are now fully functional.
