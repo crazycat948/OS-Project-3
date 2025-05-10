@@ -1,92 +1,104 @@
-# OS-Project-3
 CS4348 Project 3: B-Tree Index File Manager
-This project implements a disk-based B-Tree index file system for managing key-value pairs in a structured and scalable way. Designed as part of the CS4348 Operating Systems course, the program simulates block-level disk access using 512-byte blocks and supports command-line operations like inserting, searching, and printing data.
+This project implements a command-line program that creates and manages a disk-based B-Tree index file using fixed-size 512-byte blocks. The index supports key-value insertion, searching, printing, loading from a CSV file, and extracting to a CSV file.
 
-Features
-Disk-based B-Tree structure with minimal memory footprint
+This was developed for the CS4348 Operating Systems course at The University of Texas at Dallas.
 
-Fixed 512-byte node and header blocks
+How to Run
+Use Python 3 to run the program. Example:
 
-Custom binary index file format
-
-Insert key-value pairs with node splitting
-
-Search for keys and return values
-
-Print all key-value pairs in sorted order (in-order traversal)
-
-File Structure
-pgsql
+css
 Copy
 Edit
-.
-├── main.py         # Command-line interface
-├── fileio.py       # Handles block read/write, integer encoding
-├── btree.py        # B-Tree logic: insert, search, print
-├── README.md       # You're reading it!
-Commands
-Run everything with python main.py followed by a command.
+python3 main.py <command> <filename> [args]
+Available Commands
+1. Create
+Creates a new index file. Fails if the file already exists.
 
-Create a new index file
-bash
+css
 Copy
 Edit
-python main.py create tree.idx
-Insert key-value pair
-bash
+python3 main.py create <index_file>
+Example:
+
+css
 Copy
 Edit
-python main.py insert tree.idx 42 1234
-Search for a key
-bash
+python3 main.py create tree.idx
+2. Insert
+Inserts a single key-value pair into the index file.
+
+php-template
 Copy
 Edit
-python main.py search tree.idx 42
-# Output: Found key: 42, value: 1234
-Print all key-value pairs (sorted)
-bash
+python3 main.py insert <index_file> <key> <value>
+Example:
+
+css
 Copy
 Edit
-python main.py print tree.idx
-# Output:
-# Key: 10, Value: 100
-# Key: 20, Value: 200
-# ...
-File Format
-Header (Block 0)
-Offset	Description
-0–7	Magic number 4348PRJ3
-8–15	Root node block ID
-16–23	Next available block ID
+python3 main.py insert tree.idx 10 100
+3. Search
+Searches for a specific key and prints the value if found.
 
-B-Tree Node (Each 512-byte block)
-Field	Count	Bytes
-Block ID	1	8
-Parent Block ID	1	8
-Number of keys	1	8
-Keys	19	152
-Values	19	152
-Children (pointers)	20	160
+php-template
+Copy
+Edit
+python3 main.py search <index_file> <key>
+Example:
 
-Technical Notes
-All integers are stored as 8-byte big-endian values.
+css
+Copy
+Edit
+python3 main.py search tree.idx 10
+4. Print
+Prints all key-value pairs in sorted order.
 
-Only 3 nodes are held in memory at any time.
+arduino
+Copy
+Edit
+python3 main.py print <index_file>
+Example:
 
-The B-Tree has minimum degree = 10, allowing up to 19 keys per node.
+arduino
+Copy
+Edit
+python3 main.py print tree.idx
+5. Load (from CSV)
+Loads and inserts key-value pairs from a CSV file. Each line in the CSV must have the format:
 
-Built using Python 2/3 compatible syntax with struct for binary packing.
+vbnet
+Copy
+Edit
+key,value
+Command:
 
-Future Enhancements
-load: Bulk insert from CSV
+php-template
+Copy
+Edit
+python3 main.py load <index_file> <input_csv_file>
+Example:
 
-extract: Export all key-value pairs to CSV
+css
+Copy
+Edit
+python3 main.py load tree.idx input.csv
+6. Extract (to CSV)
+Exports all key-value pairs in sorted order to a new CSV file. Fails if the file already exists.
 
-Internal node splitting (beyond root)
+php-template
+Copy
+Edit
+python3 main.py extract <index_file> <output_csv_file>
+Example:
 
-Delete operation (not required in this assignment)
+css
+Copy
+Edit
+python3 main.py extract tree.idx output.csv
+Notes
+All data is stored in 512-byte blocks using big-endian format.
 
-Author
-Yifan Ren
-CS4348 – Operating Systems (Spring 2025)
-The University of Texas at Dallas
+The B-Tree has a minimum degree of 10 and supports up to 19 key-value pairs per node.
+
+The program only loads a maximum of 3 nodes into memory at any time.
+
